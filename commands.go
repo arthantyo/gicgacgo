@@ -50,12 +50,15 @@ func registerCommands(s *discordgo.Session) ([]*discordgo.ApplicationCommand, er
 			},
 			},
 		},
+		{
+			Name:        "stats",
+			Description: "view your personal game statistics",
+		},
 	}
 
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
-		// ! CURRENTLY USING MY GUILD
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "1263867338164539463", v)
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, getGuildID(), v)
 		if err != nil {
 			slog.Error("cannot create command", slog.String("command", v.Name), slog.Any("error", err))
 		}
@@ -67,8 +70,7 @@ func registerCommands(s *discordgo.Session) ([]*discordgo.ApplicationCommand, er
 
 func removeCommands(s *discordgo.Session, commands []*discordgo.ApplicationCommand) {
 	for _, v := range commands {
-		// ! CURRENTLY USING MY GUILD
-		err := s.ApplicationCommandDelete(s.State.User.ID, "1263867338164539463", v.ID)
+		err := s.ApplicationCommandDelete(s.State.User.ID, getGuildID(), v.ID)
 		if err != nil {
 			slog.Error("cannot delete command", slog.String("command", v.Name), slog.Any("error", err))
 		}

@@ -36,18 +36,27 @@ func AcceptDuel(s *discordgo.Session, i *discordgo.InteractionCreate, inviter st
 	shared.Players[inviter] = &shared.Player{GameId: gameId, Id: inviter}
 	shared.Players[invitee] = &shared.Player{GameId: gameId, Id: invitee}
 
+	// Get player usernames
+	inviterUser, _ := s.User(inviter)
+	inviteeUser, _ := s.User(invitee)
+	inviterName := inviterUser.Username
+	inviteeName := inviteeUser.Username
+
 	shared.Games[gameId] = &shared.Game{
 		StartedTimestamp: time.Now(),
 		Players:          []shared.Player{*shared.Players[inviter], *shared.Players[invitee]},
 		Turn:             shared.RandomizeTurn(),
 		PlayerX:          *shared.Players[inviter],
 		PlayerY:          *shared.Players[invitee],
+		PlayerXName:      inviterName,
+		PlayerYName:      inviteeName,
 		Game: shared.Board{
 			{"", "", ""},
 			{"", "", ""},
 			{"", "", ""},
 		},
 		ChannelId: i.ChannelID,
+		GuildId:   i.GuildID,
 	}
 
 	shared.DisableAllButtons(s, i)

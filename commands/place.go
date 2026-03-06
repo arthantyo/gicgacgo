@@ -73,14 +73,14 @@ func Place(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	_, won := shared.CheckWin(game.Game)
 
 	if won {
-		shared.EndGame(s, i, game, fmt.Sprintf("congratulations <@%s>! you won the game!", user.ID))
+		shared.EndGame(s, i, game, user.ID, false)
 		return
 	}
 
 	draw := shared.CheckDraw(game.Game)
 
 	if draw {
-		shared.EndGame(s, i, game, "woof. that was an equal game you should duel again to see who's the real deal")
+		shared.EndGame(s, i, game, "", true)
 		return
 	}
 

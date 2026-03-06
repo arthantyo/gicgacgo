@@ -17,11 +17,14 @@ type Game struct {
 	EndedTimestamp   *time.Time
 	PlayerX          Player
 	PlayerY          Player
+	PlayerXName      string
+	PlayerYName      string
 	Players          []Player
 	Turn             string
 	BoardId          string
 	BoardMessageId   string
 	ChannelId        string
+	GuildId          string
 }
 
 type Player struct {
@@ -32,7 +35,31 @@ type Player struct {
 var Games = make(map[string]*Game)
 var Players = make(map[string]*Player)
 
-func EndGame(s *discordgo.Session, i *discordgo.InteractionCreate, game *Game, message string) {
+func EndGame(s *discordgo.Session, i *discordgo.InteractionCreate, game *Game, winnerId string, isDraw bool) {
+	// Determine winner and loser IDs
+	var loserId string
+	var message string
+	if isDraw {
+		message = "woof. that was an equal game you should duel again to see who's the real deal"
+		RecordGameResult(game.PlayerX.Id, game.PlayerY.Id, game.GuildId, game.PlayerXName, game.PlayerYName, true)
+	} else {
+		if winnerId == game.PlayerX.Id {
+			loserId = game.PlayerY.Id
+		} else {
+			loserId = game.PlayerX.Id
+		}
+		message = fmt.Sprintf("congratulations <@%s>! you won the game!", winnerId)
+		var winnerName, loserName string
+		if winnerId == game.PlayerX.Id {
+			winnerName = game.PlayerXName
+			loserName = game.PlayerYName
+		} else {
+			winnerName = game.PlayerYName
+			loserName = game.PlayerXName
+		}
+		RecordGameResult(winnerId, loserId, game.GuildId, winnerName, loserName, false)
+	}
+
 	delete(Games, game.PlayerX.GameId)
 	delete(Players, game.PlayerX.Id)
 	delete(Players, game.PlayerY.Id)

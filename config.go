@@ -19,3 +19,12 @@ func setupBot() (*discordgo.Session, error) {
 	}
 	return s, nil
 }
+
+// getGuildID returns the guild ID for command registration
+// Returns the dev guild ID if DEV_MODE is set, otherwise returns empty string for global commands
+func getGuildID() string {
+	if os.Getenv("DEV_MODE") == "true" {
+		return os.Getenv("DEV_GUILD_ID")
+	}
+	return "" // Empty string registers commands globally
+}

@@ -1,42 +1,65 @@
 package command
 
 import (
+	"fmt"
+	shared "gicgacgo/shared"
+
 	"github.com/bwmarrin/discordgo"
 )
 
 func Leaderboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// TODO: gonna be used after i have a db setted up
-	// options := i.ApplicationCommandData().Options
+	options := i.ApplicationCommandData().Options
 
-	// should be some database ig
-	leaderboard := []struct {
-		Name  string
-		WL    string
-		Games string
-	}{
-		{"JohnDoe#88", "88%", "213"},
-		{"MaryDoe#82", "92%", "221"},
-		{"Picasso#444", "100%", "112"},
-		{"Jeff#4424", "100%", "444"},
-		{"ForniteLuvr#556", "100%", "1241"},
-		{"MoneyUp#1001", "144%", "232"},
-		{"OnePiece#22", "87%", "231"},
-		{"McChicken#222", "99%", "213"},
-		{"PhoneMe#996", "88%", "432"},
-		{"Waffle#3512", "87%", "321"},
+	// leaderboard type (local or global)
+	var leaderboardType string
+	if len(options) > 0 {
+		leaderboardType = options[0].StringValue()
+	} else {
+		leaderboardType = "global"
+	}
+
+	var stats []*shared.PlayerStats
+	var title string
+
+	if leaderboardType == "local" {
+		stats = shared.GetGuildLeaderboard(i.GuildID, 10)
+		title = "local server leaderboard - top 10"
+	} else {
+		stats = shared.GetGlobalLeaderboard(10)
+		title = "global leaderboard - top 10"
 	}
 
 	embed := &discordgo.MessageEmbed{
-		Title: "global leaderboard top 10",
+		Title: title,
 		Color: 0x00ff00,
 	}
 
-	for _, player := range leaderboard {
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:   player.Name,
-			Value:  "W/L: " + player.WL + " | Games: " + player.Games,
-			Inline: false,
-		})
+	if len(stats) == 0 {
+		embed.Description = "no games have been played yet! use `/duel` to start playing."
+	} else {
+		for rank, player := range stats {
+			var medal string
+			switch rank {
+			case 0:
+				medal = "🥇"
+			case 1:
+				medal = "🥈"
+			case 2:
+				medal = "🥉"
+			default:
+				medal = fmt.Sprintf("**#%d**", rank+1)
+			}
+
+			name := fmt.Sprintf("%s %s", medal, player.Username)
+			value := fmt.Sprintf("**Wins:** %d | **Losses:** %d | **Draws:** %d\n**Win Rate:** %s | **Total Games:** %d",
+				player.Wins, player.Losses, player.Draws, player.WinRateString(), player.TotalGames())
+
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   name,
+				Value:  value,
+				Inline: false,
+			})
+		}
 	}
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
