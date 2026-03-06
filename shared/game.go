@@ -25,6 +25,8 @@ type Game struct {
 	BoardMessageId   string
 	ChannelId        string
 	GuildId          string
+	IsSinglePlayer   bool
+	AI               *AI
 }
 
 type Player struct {
@@ -41,23 +43,39 @@ func EndGame(s *discordgo.Session, i *discordgo.InteractionCreate, game *Game, w
 	var message string
 	if isDraw {
 		message = "woof. that was an equal game you should duel again to see who's the real deal"
-		RecordGameResult(game.PlayerX.Id, game.PlayerY.Id, game.GuildId, game.PlayerXName, game.PlayerYName, true)
+		// Don't record stats for AI training games
+		if !game.IsSinglePlayer {
+			RecordGameResult(game.PlayerX.Id, game.PlayerY.Id, game.GuildId, game.PlayerXName, game.PlayerYName, true)
+		} else {
+			message = "training game ended in a draw! practice more to improve!"
+		}
 	} else {
 		if winnerId == game.PlayerX.Id {
 			loserId = game.PlayerY.Id
 		} else {
 			loserId = game.PlayerX.Id
 		}
-		message = fmt.Sprintf("congratulations <@%s>! you won the game!", winnerId)
-		var winnerName, loserName string
-		if winnerId == game.PlayerX.Id {
-			winnerName = game.PlayerXName
-			loserName = game.PlayerYName
+		
+		// Don't record stats for AI training games
+		if !game.IsSinglePlayer {
+			message = fmt.Sprintf("congratulations <@%s>! you won the game!", winnerId)
+			var winnerName, loserName string
+			if winnerId == game.PlayerX.Id {
+				winnerName = game.PlayerXName
+				loserName = game.PlayerYName
+			} else {
+				winnerName = game.PlayerYName
+				loserName = game.PlayerXName
+			}
+			RecordGameResult(winnerId, loserId, game.GuildId, winnerName, loserName, false)
 		} else {
-			winnerName = game.PlayerYName
-			loserName = game.PlayerXName
+			// Training game result
+			if winnerId == "ai_bot" {
+				message = "de bot won. keep training to improve your skills!"
+			} else {
+				message = fmt.Sprintf("congratulations <@%s>! you destroyed mr AI!", winnerId)
+			}
 		}
-		RecordGameResult(winnerId, loserId, game.GuildId, winnerName, loserName, false)
 	}
 
 	delete(Games, game.PlayerX.GameId)
@@ -187,4 +205,54 @@ func createBoardEmbed(board Board) *discordgo.MessageEmbed {
 
 func PlaceMarker(s *discordgo.Session, i *discordgo.InteractionCreate, gameId string, row int, col int) {
 	Games[gameId].Game[row][col] = Games[gameId].Turn
+}
+
+// MakeAIMove makes the AI's move in a single-player game
+func MakeAIMove(s *discordgo.Session, i *discordgo.InteractionCreate, gameId string) {
+	game := Games[gameId]
+	if game == nil || !game.IsSinglePlayer {
+		return
+	}
+
+	// Determine AI and player symbols
+	var aiSymbol, playerSymbol string
+	if game.PlayerY.Id == "ai_bot" {
+		aiSymbol = "O"
+		playerSymbol = "X"
+	} else {
+		aiSymbol = "X"
+		playerSymbol = "O"
+	}
+
+	// Get best move from AI
+	row, col := game.AI.GetBestMove(game.Game, aiSymbol, playerSymbol)
+
+	if row == -1 || col == -1 {
+		return // No valid move
+	}
+
+	// Place AI's marker
+	game.Game[row][col] = aiSymbol
+	EditBoardEmbed(s, i, gameId)
+
+	// Check for win or draw
+	_, won := CheckWin(game.Game)
+	if won {
+		EndGame(s, i, game, "ai_bot", false)
+		return
+	}
+
+	if CheckDraw(game.Game) {
+		EndGame(s, i, game, "", true)
+		return
+	}
+
+	// Switch turn back to player
+	if game.Turn == "X" {
+		game.Turn = "O"
+	} else {
+		game.Turn = "X"
+	}
+
+	EditMessageBoardEmbed(s, i, gameId)
 }

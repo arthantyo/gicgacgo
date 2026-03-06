@@ -50,9 +50,11 @@ func Leaderboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				medal = fmt.Sprintf("**#%d**", rank+1)
 			}
 
-			name := fmt.Sprintf("%s %s", medal, player.Username)
-			value := fmt.Sprintf("**Wins:** %d | **Losses:** %d | **Draws:** %d\n**Win Rate:** %s | **Total Games:** %d",
-				player.Wins, player.Losses, player.Draws, player.WinRateString(), player.TotalGames())
+			name := fmt.Sprintf("%s %s - %s", medal, player.Username, player.GetRankString())
+			value := fmt.Sprintf("**level:** %d | **xp:** %d\n**w/l/d:** %d/%d/%d | **win rate:** %s\n**total games:** %d",
+				player.Level, player.XP,
+				player.Wins, player.Losses, player.Draws, player.WinRateString(),
+				player.TotalGames())
 
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 				Name:   name,

@@ -22,6 +22,8 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 	"leaderboard": command.Leaderboard,
 	"place":       command.Place,
 	"stats":       command.Stats,
+	"ranks":       command.Ranks,
+	"train":       command.Train,
 }
 
 func handleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {

@@ -54,6 +54,14 @@ func registerCommands(s *discordgo.Session) ([]*discordgo.ApplicationCommand, er
 			Name:        "stats",
 			Description: "view your personal game statistics",
 		},
+		{
+			Name:        "ranks",
+			Description: "view all available ranks and XP requirements",
+		},
+		{
+			Name:        "train",
+			Description: "practice against an AI opponent",
+		},
 	}
 
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))

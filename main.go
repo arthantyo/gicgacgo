@@ -1,6 +1,7 @@
 package main
 
 import (
+	shared "gicgacgo/shared"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,6 +13,13 @@ import (
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		slog.Error("error loading .env file")
+	}
+
+	// Load stats from JSON file
+	if err := shared.LoadStats(); err != nil {
+		slog.Error("error loading stats", slog.Any("error", err))
+	} else {
+		slog.Info("stats loaded successfully")
 	}
 
 	dg, err := setupBot()

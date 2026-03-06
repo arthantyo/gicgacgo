@@ -93,10 +93,15 @@ func Place(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("moved ur marker to row %s and col %s", strconv.Itoa(row), strconv.Itoa(col)),
+			Content: fmt.Sprintf("moved ur marker to row %s and col %s", strconv.Itoa(row+1), strconv.Itoa(col+1)),
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
 
 	shared.EditMessageBoardEmbed(s, i, player.GameId)
+
+	// If this is a single-player game and it's AI's turn, make the AI move
+	if game.IsSinglePlayer {
+		shared.MakeAIMove(s, i, player.GameId)
+	}
 }
